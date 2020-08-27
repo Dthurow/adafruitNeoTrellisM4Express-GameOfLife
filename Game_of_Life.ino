@@ -22,47 +22,50 @@ void setup(){
 }
   
 void loop() {
-  // put your main code here, to run repeatedly:
+
   trellis.tick();
   
   if (!game_started){
-      handleGameStart();
+      handleGameSetup();
   }
   else{
     gameOfLife();
     checkGameRestart();
   }
   
-  
   delay(10);
 }
 
-void handleGameStart(){
-   while (trellis.available()){
-        keypadEvent e = trellis.read();
+//if a key is pressed it'll light up, pressed again, turned off
+//lets you setup initial state for game of life
+void handleGameSetup(){
+  
+  while (trellis.available()){
+    keypadEvent e = trellis.read();
         
-        if (e.bit.EVENT == KEY_JUST_PRESSED) {
-          int key = e.bit.KEY;  // shorthand for what was pressed
-          Serial.print(key); Serial.println(" pressed");
+    if (e.bit.EVENT == KEY_JUST_PRESSED) {
+      
+      int key = e.bit.KEY;  // shorthand for what was pressed
+      Serial.print(key); Serial.println(" pressed");
 
-          if (key == trellis.num_keys()-1){
-            Serial.println("starting the game");
-            trellis.setPixelColor(key, 0);
-            lit_keys[key] = false;
-            game_started = true;
-            return;
-          }
-          else{
-            lit_keys[key] = !lit_keys[key];
-            if (lit_keys[key]) {
-              trellis.setPixelColor(key, Wheel(random(255)));
-            } else {
-              trellis.setPixelColor(key, 0);
-            }  
-          }
-          
-    
-        }
+      if (key == trellis.num_keys()-1){
+        Serial.println("starting the game");
+        trellis.setPixelColor(key, 0);
+        lit_keys[key] = false;
+        game_started = true;
+        return;
+      }
+      else{
+        lit_keys[key] = !lit_keys[key];
+        if (lit_keys[key]) {
+          trellis.setPixelColor(key, Wheel(random(255)));
+        } else {
+          trellis.setPixelColor(key, 0);
+        }  
+      }
+      
+
+    }
   }
 }
 
@@ -88,16 +91,15 @@ void gameOfLife(){
     //to get the light directly above/below, +/-8
     //also need to the left and right of directly above/below, so +/-7 and +/-9
     //to get the light directly left/right, +/-1
-    //to make it loop around top/bottom, mod by 32 (32 total lights, indexed 0-31)
-    //if it's a negative number, add 32 to it
-      int numNeighbors = lit_keys[getNeighborIndex(i,8)] 
-                          + lit_keys[getNeighborIndex(i,9)] 
-                          + lit_keys[getNeighborIndex(i,7)] 
-                          + lit_keys[getNeighborIndex(i,-8)] 
-                          + lit_keys[getNeighborIndex(i,-9)] 
-                          + lit_keys[getNeighborIndex(i,-7)] 
-                          + lit_keys[getNeighborIndex(i,1)] 
-                          + lit_keys[getNeighborIndex(i,-1)]; 
+      int numNeighbors = ( lit_keys[getNeighborIndex(i,8)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,9)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,7)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,-8)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,-9)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,-7)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,1)] ? 1 : 0)
+                          + ( lit_keys[getNeighborIndex(i,-1)]? 1 : 0); 
+                          
       bool key = lit_keys[i];
       
       if (numNeighbors > 0){
@@ -149,6 +151,8 @@ void gameOfLife(){
   
 }
 
+//if user presses the last button, reset game of life so they can
+//set new initial conditions
 void checkGameRestart(){
   keypadEvent e = trellis.read();
         
@@ -165,6 +169,7 @@ void checkGameRestart(){
     }
 }
 
+//All lights should be off except one, which will start the game
 void setInitialGameState(){
   
   for (int i=0; i<trellis.num_keys()-1; i++) {
@@ -176,7 +181,11 @@ void setInitialGameState(){
   trellis.setPixelColor(trellis.num_keys()-1, Wheel(75));
 }
 
+
 int getNeighborIndex(int i, int neighbor_offset){
+  //to make it loop around top/bottom, mod by 32 (32 total lights, indexed 0-31)
+   //if it's a negative number, add 32 to it
+  
   int neighbor = (i+neighbor_offset) % trellis.num_keys();
   if (neighbor < 0){
     neighbor += trellis.num_keys();
