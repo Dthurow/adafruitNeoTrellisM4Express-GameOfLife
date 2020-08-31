@@ -5,6 +5,7 @@
 Adafruit_NeoTrellisM4 trellis = Adafruit_NeoTrellisM4();
 
 boolean *lit_keys;
+boolean *new_lit_keys;
 boolean game_started;
 
 void setup(){
@@ -16,6 +17,7 @@ void setup(){
   game_started = false;
 
   lit_keys = new boolean[trellis.num_keys()];
+  new_lit_keys = new boolean[trellis.num_keys()];
   
   setInitialGameState();
   
@@ -78,9 +80,6 @@ void handleGameSetup(){
 void gameOfLife(){
   int totalAlive = 0;
 
-  boolean *new_lit_keys = new boolean[trellis.num_keys()];
-
-
   //loop thru and find all changes, record the new version of lit keys
   //in the new_lit_keys array. Can't update as we go because then the changes
   //we make for one key will affect the others. We have to figure out all updates
@@ -101,6 +100,16 @@ void gameOfLife(){
                           + ( lit_keys[getNeighborIndex(i,-1)]? 1 : 0); 
                           
       bool key = lit_keys[i];
+
+      Serial.printf("Math for neighbors is: %d + %d + %d + %d + %d + %d + %d + %d\n", ( lit_keys[getNeighborIndex(i,8)] ? 1 : 0),
+                           ( lit_keys[getNeighborIndex(i,9)] ? 1 : 0),
+                           ( lit_keys[getNeighborIndex(i,7)] ? 1 : 0),
+                           ( lit_keys[getNeighborIndex(i,-8)] ? 1 : 0),
+                           ( lit_keys[getNeighborIndex(i,-9)] ? 1 : 0),
+                           ( lit_keys[getNeighborIndex(i,-7)] ? 1 : 0),
+                           ( lit_keys[getNeighborIndex(i,1)] ? 1 : 0),
+                           (lit_keys[getNeighborIndex(i,-1)]? 1 : 0));
+
       
       if (numNeighbors > 0){
         Serial.print("Have neighbors: "); Serial.println(numNeighbors);  
@@ -130,13 +139,16 @@ void gameOfLife(){
     if (new_lit_keys[i] && !lit_keys[i]){
       //should be turned on
       trellis.setPixelColor(i, Wheel(random(255)));
-      totalAlive++;
     }
     else if (!new_lit_keys[i]) {
       //should be turned off
       trellis.setPixelColor(i, 0);
     }
     lit_keys[i] = new_lit_keys[i];
+    
+    if (lit_keys[i]){
+      totalAlive++;
+    }
   }
   
   
@@ -190,6 +202,7 @@ int getNeighborIndex(int i, int neighbor_offset){
   if (neighbor < 0){
     neighbor += trellis.num_keys();
   }
+  Serial.print("Neighbor of ");Serial.print(i);Serial.print(" is ");Serial.println(neighbor);
   return neighbor;
 }
 
